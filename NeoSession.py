@@ -65,6 +65,10 @@ class NeoSession:
                 return resp
         else:
             resp = self.session.post(url, data)
+            try:
+                resp.raise_for_status()
+            except requests.exceptions.HTTPError:
+                print('Log: Connection error.')
             if self.check_login(resp) is not True:
                 self.login()
                 resp = self.session.post(url, data)
@@ -89,10 +93,16 @@ class NeoSession:
             self.session.headers.update(session_headers)
 
     def check_login(self, resp):
-        if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
-                self.username) in resp.text:
-            print('Log: Login check passed.')
-            return True
+        for test in range(2):
+            if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
+                    self.username) not in resp.text:
+                self.login()
+            else:
+                print('Log: Login check passed.')
+                return True
+                pass
+        print('Log: Login check failed.')
+        sys.exit(1)
 
     def login(self):
         '''Log-in to neopets.com'''
