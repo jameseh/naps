@@ -26,26 +26,51 @@ class NeoSession:
     login_data = {'username': username,
                   'password': conf['USER-SETTINGS']['PASSWORD'], }
     jar = conf['PROGRAM-SETTINGS']['COOKIE_JAR']
-    #pause = time.sleep(random.randint(5, 11))
+    pause = (2, 4)
 
     def __init__(self):
         self.load_session_cookies()
         self.load_session_headers()
-        self.login()
         self.update_session_cookies()
 
-    def session_get(self, url):
-        time.sleep(random.randint(5, 11))
-        return self.session.get(url)
+    def session_get(self, url, pause=pause):
+        time.sleep(random.randint(pause[0], pause[1]))
         self.session.headers.update({'Referer': url})
-
-    def session_post(self, url, data=None):
-        time.sleep(random.randint(5, 11))
-        if data is None:
-            return self.session.post(url)
+        resp = self.session.get(url)
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError:
+            print('Log: Connection error.')
+        if self.check_login(resp) is not True:
+            self.login()
+            resp = self.session.get(url)
+            self.check_login(resp)
         else:
-            return self.session.post(url, data)
+            return resp
+
+    def session_post(self, url, data=None, pause=pause):
+        time.sleep(random.randint(pause[0], pause[1]))
         self.session.headers.update({'Referer': url})
+        if data is None:
+            resp = self.session.post(url)
+            try:
+                resp.raise_for_status()
+            except requests.exceptions.HTTPError:
+                print('Log: Connection error.')
+            if self.check_login(resp) is not True:
+                self.login()
+                resp = self.session.post(url)
+                self.check_login(resp)
+            else:
+                return resp
+        else:
+            resp = self.session.post(url, data)
+            if self.check_login(resp) is not True:
+                self.login()
+                resp = self.session.post(url, data)
+                self.check_login(resp)
+            else:
+                return resp
 
     def update_session_cookies(self):
         if os.path.isfile(self.jar):
@@ -63,27 +88,18 @@ class NeoSession:
             session_headers = json.load(headers)
             self.session.headers.update(session_headers)
 
-    def check_login(self):
-        url = 'http://www.neopets.com/'
-        resp = self.session_get(url)
+    def check_login(self, resp):
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) in resp.text:
-            print('Already logged in.')
+            print('Log: Login check passed.')
             return True
 
     def login(self):
         '''Log-in to neopets.com'''
-        if self.check_login() is not True:
-            url = 'http://www.neopets.com/login'
-            resp = self.session_get(url)
-            self.session.headers.update({'Referer': url})
-
-            try:
-                resp.raise_for_status()
-            except requests.exceptions.HTTPError:
-                print('Could not connect to neopets.com')
-                sys.exit(1)
-
+        url = 'http://www.neopets.com/login'
+        resp = self.session_get(url)
+        self.session.headers.update({'Referer': url})
+        if self.check_login(resp) is not True:
             if os.path.isfile(self.jar) is not True:
                 os.system('touch neopets.cookies')
                 self.session_cookies = resp.cookies

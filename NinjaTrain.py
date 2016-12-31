@@ -8,7 +8,7 @@ Part of naps (neopets automation program suite)
 
 import re
 from NeoSession import NeoSession
-from ShopWizard import ShowWizard
+from ShopWizard import ShopWizard
 
 
 class NinjaTrain(NeoSession):
@@ -25,9 +25,8 @@ class NinjaTrain(NeoSession):
         codestone = re.search(r'(.+ codestone)', resp.text).group(1)
         url = 'http://www.neopets.com/inventory.phtml'
         resp = self.session_get(url)
-        if codestone not in resp.text:
-            ShowWizard.buy_item(codestone)
-
+        #if codestone not in resp.text:
+            #ShowWizard.buy_item(codestone)
 
     def determine_course(self):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
@@ -35,8 +34,7 @@ class NinjaTrain(NeoSession):
         level = int(re.search(r'(Lvl : <font color=green><b>)(\d*)', resp.text).group(2))
         strength = int(re.search(r'(Str : <b>)(\d*)', resp.text).group(2))
         defence = int(re.search(r'(Def : <b>)(\d*)', resp.text).group(2))
-        hp = int(re.search(r'(Hp  : <b>)(\d*)', resp.text).group(2))
-
+        hp = int(re.search(r'(Hp  : <b>)(\d*) / (\d*)</b>', resp.text).group(3))
         if hp < (level * 2) - 20:
             course_type = 'Endurance'
             return course_type
@@ -58,10 +56,10 @@ class NinjaTrain(NeoSession):
         if 'Time till course finishes' in resp.text:
             print('Log: Already in course.')
             pass
-        if 'This course has not been paid' in resp.text:
+        elif 'This course has not been paid' in resp.text:
             self.make_payment()
             print('Log: Course has not been paid.')
-        if 'Course Finished!' in resp.text:
+        elif 'Course Finished!' in resp.text:
             self.complete_course()
             print('Log: Course finished!')
             self.train_pet()
@@ -71,7 +69,6 @@ class NinjaTrain(NeoSession):
             self.train_pet()
             self.make_payment()
             print('Log: {} is training {}.'.format(self.pet, self.course_type))
-
 
     def train_pet(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'
