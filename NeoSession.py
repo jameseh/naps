@@ -98,7 +98,7 @@ class NeoSession:
                     self.username) not in resp.text:
                 self.login()
             else:
-                print('Log: Login check passed.')
+                print('Log: Login check passed. [{}]'.format(resp.url))
                 return True
                 pass
         print('Log: Login check failed.')

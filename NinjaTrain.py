@@ -15,8 +15,9 @@ class NinjaTrain(NeoSession):
     pet = NeoSession.conf['USER-SETTINGS']['PET-NAME']
 
     def __init__(self):
-        self.course_type = self.determine_course()
-        self.check_status_run()
+        resp = self.parse_status()
+        self.course_type = self.determine_course(resp)
+        self.run(resp)
         #self.check_buy_codestone()
 
     def check_inventory(self):
@@ -28,9 +29,12 @@ class NinjaTrain(NeoSession):
         #if codestone not in resp.text:
             #ShowWizard.buy_item(codestone)
 
-    def determine_course(self):
+    def parse_status(self):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
         resp = self.session_get(url)
+        return resp
+
+    def determine_course(self, resp):
         level = int(re.search(r'(Lvl : <font color=green><b>)(\d*)', resp.text).group(2))
         strength = int(re.search(r'(Str : <b>)(\d*)', resp.text).group(2))
         defence = int(re.search(r'(Def : <b>)(\d*)', resp.text).group(2))
@@ -50,12 +54,9 @@ class NinjaTrain(NeoSession):
                 course_type = 'Level'
                 return course_type
 
-    def check_status_run(self):
-        url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
-        resp = self.session_get(url)
+    def run(self, resp):
         if 'Time till course finishes' in resp.text:
             print('Log: Already in course.')
-            pass
         elif 'This course has not been paid' in resp.text:
             self.make_payment()
             print('Log: Course has not been paid.')
