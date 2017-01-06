@@ -18,41 +18,45 @@ class TradeStocks(NeoSession):
     portfolio_list = []
 
     def __init__(self):
+        self.buy_volume = '1000'
         self.parse_stocks()
         self.write_data_db()
-        self.lowest_stock = self.find_lowest_stock()
-        self.buy_lowest_stock()
+        # self.lowest_stock = self.find_lowest_stock()
+        # self.buy_stock()
 
     def write_data_db(self):
-        stock_data = sqlite3.connect('stock_data.db')
+        stock_data = sqlite3.connect('stockdata.db')
         cur = stock_data.cursor()
         try:
             cur.execute('''CREATE TABLE stocks
-                                   (ticker TEXT, volume INTEGER, open INTEGER, curr INTEGER, change TEXT, time FLOAT)''')
+                                               (ticker TEXT, volume INTEGER, open INTEGER, curr INTEGER, change TEXT, time FLOAT)''')
+            cur.execute('''CREATE TABLE portfolio
+                                               (ticker TEXT, volume INTEGER, price INTEGER, time FLOAT)''')
         except sqlite3.OperationalError:
             for stocks in self.stock_list:
                 cur.execute('''INSERT INTO stocks (ticker, volume, open, curr, change, time) VALUES (?, ?, ?, ?, ?, ?)''', (stocks['ticker'], stocks['volume'], stocks['open'], stocks['curr'], stocks['change'], stocks['time']))
+                cur.execute('''INSERT INTO portfolio (ticker, volume, price, time) VALUES (?, ?, ?, ?)''', (stocks['ticker'], stocks['volume'], stocks['curr'], stocks['time']))
             stock_data.commit()
-            stock_data.close()
+            cur.close()
 
-    def buy_lowest_stock(self):
+    def buy_stock(self):
         url = 'http://www.neopets.com/stockmarket.phtml?type=buy&ticker={}' \
             .format(self.lowest_stock['ticker'])
-        resp = self.session_get(url)
+        resp = self.get(url)
         ref_ck = re.search(r"'&_ref_ck=(\w*)';", resp.text).group(1)
         url = 'http://www.neopets.com/process_stockmarket.phtml'
-        resp = self.session_post(url, data={'type': 'buy', 'ticker_symbol': self.lowest_stock['ticker'], 'amount_shares': '1000', '_ref_ck': ref_ck})
+        resp = self.post(url, data={'type': 'buy', 'ticker_symbol': self.lowest_stock['ticker'], 'amount_shares': buy_volume, '_ref_ck': ref_ck})
 
         if 'Error: Sorry, that would' in resp.text:
             print('Over daily 1000 shares.')
             pass
         else:
-            self.session_get('http://www.neopets.com/stockmarket.phtml?type=portfolio')
-            print('1000 shares of {} bought.'.format(self.lowest_stock['ticker']))
+            self.get('http://www.neopets.com/stockmarket.phtml?type=portfolio')
+            print('{} shares of {} bought.'.format(self.buy_volume, self.lowest_stock['ticker']))
 
     def parse_stocks(self):
         url = 'http://www.neopets.com/stockmarket.phtml?type=list&full=true'
-        resp = self.session_get(url)
+        resp = self.get(url)
         soup = bs4.BeautifulSoup(resp.text, 'lxml')
         table = soup.findAll('table')[7]
         for row in table.find_all('tr')[1:]:
@@ -64,6 +68,8 @@ class TradeStocks(NeoSession):
                                     'curr': cells[5].string.strip(),
                                     'change': cells[6].string.strip(),
                                     'time': time.time()})
+            print(stock_list)
+            return stock_list
 
     def find_lowest_stock(self):
         negative_stocks = []
@@ -86,7 +92,6 @@ class TradeStocks(NeoSession):
 
 
 def main():
-    NeoSession()
     TradeStocks()
 
 
