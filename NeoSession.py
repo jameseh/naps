@@ -43,8 +43,7 @@ class NeoSession:
 
         if self.login_status(resp) is not True:
             self.login()
-        else:
-            return resp
+        return resp
 
     def post(self, url, data=None, pause=pause_tuple):
         time.sleep(random.randint(pause[0], pause[1]))
@@ -61,8 +60,8 @@ class NeoSession:
             if self.login_status(resp) is False:
                 print('Log: Logging in.')
                 self.login()
-            else:
-                return resp
+            return resp
+
         else:
             resp = self.session.post(url, data)
             print(resp.url)
@@ -75,8 +74,7 @@ class NeoSession:
 
             if self.login_status(resp) is False:
                 self.login()
-            else:
-                return resp
+            return resp
 
     def update_cookies(self):
         if os.path.isfile(self.jar):
@@ -98,19 +96,13 @@ class NeoSession:
     def login_status(self, resp):
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) not in resp.text:
-            print('Log: Logging in.')
-            self.login()
+            print('Log: Not logged in. Logging in..')
             return False
 
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) in resp.text:
             print('Log: Login check passed. [{}]'.format(resp.url))
-            self.update_cookies()
             return True
-
-        else:
-            print('Log: Login check failed.')
-            sys.exit(1)
 
     def login(self):
         '''Log-in to neopets.com'''
@@ -122,7 +114,8 @@ class NeoSession:
             os.system('touch neopets.cookies')
             self.session_cookies = resp.cookies
 
-        self.update_cookies(self.session.cookies)
+        self.session.cookies.update(resp.cookies)
+        self.update_cookies()
         print('Login successful.')
 
 

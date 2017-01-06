@@ -19,12 +19,13 @@ class TradeStocks(NeoSession):
 
     def __init__(self):
         self.buy_volume = '1000'
-        self.parse_stocks()
-        self.write_data_db()
-        # self.lowest_stock = self.find_lowest_stock()
+        self.parse()
+        self.save_data()
+        # self.lowest_stock = self.determine_lowest()
         # self.buy_stock()
+        self.sell()
 
-    def write_data_db(self):
+    def save_data(self):
         stock_data = sqlite3.connect('stockdata.db')
         cur = stock_data.cursor()
         try:
@@ -39,7 +40,7 @@ class TradeStocks(NeoSession):
             stock_data.commit()
             cur.close()
 
-    def buy_stock(self):
+    def buy(self):
         url = 'http://www.neopets.com/stockmarket.phtml?type=buy&ticker={}' \
             .format(self.lowest_stock['ticker'])
         resp = self.get(url)
@@ -54,7 +55,14 @@ class TradeStocks(NeoSession):
             self.get('http://www.neopets.com/stockmarket.phtml?type=portfolio')
             print('{} shares of {} bought.'.format(self.buy_volume, self.lowest_stock['ticker']))
 
-    def parse_stocks(self):
+    def sell(self):
+        for stocks in self.stock_list:
+            if '+' in stocks['change']:
+                change = re.search(r'\+(\d+\.\d+)%', stocks['change']).group(1)
+                if float(change) > 50.0:
+                    print(stocks)
+
+    def parse(self):
         url = 'http://www.neopets.com/stockmarket.phtml?type=list&full=true'
         resp = self.get(url)
         soup = bs4.BeautifulSoup(resp.text, 'lxml')
@@ -68,22 +76,21 @@ class TradeStocks(NeoSession):
                                     'curr': cells[5].string.strip(),
                                     'change': cells[6].string.strip(),
                                     'time': time.time()})
-            print(stock_list)
-            return stock_list
+        return self.stock_list
 
-    def find_lowest_stock(self):
+    def determine_lowest(self):
         negative_stocks = []
         for stocks in self.stock_list:
             if '-' in stocks['change']:
                 if int(stocks['volume']) >= 1000:
                     if int(stocks['curr']) >= 15:
-                        if int(stocks['curr']) <= 17:
-                            negative_stocks.append(stocks)
+                        negative_stocks.append(stocks)
             if len(negative_stocks) == 0:
                  pass
             else:
                 self.lowest_stock = negative_stocks[0]
                 return self.lowest_stock
+
             if len(negative_stocks) > 1:
                 lowest_stock = negative_stocks[0][1]
                 if float(negative_stocks[1]) > float(lowest_stock[1]):
@@ -92,6 +99,7 @@ class TradeStocks(NeoSession):
 
 
 def main():
+    NeoSession()
     TradeStocks()
 
 
