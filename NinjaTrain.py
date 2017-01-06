@@ -22,16 +22,16 @@ class NinjaTrain(NeoSession):
 
     def check_inventory(self):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
-        resp = self.session_get(url)
+        resp = self.get(url)
         codestone = re.search(r'(.+ codestone)', resp.text).group(1)
         url = 'http://www.neopets.com/inventory.phtml'
-        resp = self.session_get(url)
+        resp = self.get(url)
         #if codestone not in resp.text:
             #ShowWizard.buy_item(codestone)
 
     def parse_status(self):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
-        resp = self.session_get(url)
+        resp = self.get(url)
         return resp
 
     def determine_course(self, resp):
@@ -73,18 +73,18 @@ class NinjaTrain(NeoSession):
 
     def train_pet(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'
-        self.session_post(url, data={'type': 'start', 'course_type': self.course_type, 'pet_name': self.pet})
+        self.post(url, data={'type': 'start', 'course_type': self.course_type, 'pet_name': self.pet})
 
     def make_payment(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml?type=pay&' \
               'pet_name={}'.format(self.pet)
-        resp = self.session_get(url)
+        resp = self.get(url)
         if 'Time till course finishes :' in resp.text:
             return True
 
     def complete_course(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'
-        self.session_post(url, data={'type': 'complete', 'pet_name': self.pet})
+        self.post(url, data={'type': 'complete', 'pet_name': self.pet})
 
 
 def main():

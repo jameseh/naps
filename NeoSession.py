@@ -28,96 +28,101 @@ class NeoSession:
     pause_tuple = (2, 4)
 
     def __init__(self):
-        self.load_session_cookies()
-        self.load_session_headers()
+        self.load_cookies()
+        self.load_headers()
 
-    def session_get(self, url, pause=pause_tuple):
+    def get(self, url, pause=pause_tuple):
         time.sleep(random.randint(pause[0], pause[1]))
-        self.session.headers.update({'Referer': url})
         resp = self.session.get(url)
+        self.session.headers.update({'Referer': resp.url})
+
         try:
             resp.raise_for_status()
         except requests.exceptions.HTTPError:
             print('Log: Connection error.')
-        if self.check_login(resp) is not True:
+
+        if self.login_status(resp) is not True:
             self.login()
-            resp = self.session.get(url)
-            self.check_login(resp)
         else:
             return resp
 
-    def session_post(self, url, data=None, pause=pause_tuple):
+    def post(self, url, data=None, pause=pause_tuple):
         time.sleep(random.randint(pause[0], pause[1]))
-        self.session.headers.update({'Referer': url})
+
         if data is None:
             resp = self.session.post(url)
+            self.session.headers.update({'Referer': resp.url})
 
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError:
                 print('Log: Connection error.')
 
-            if self.check_login(resp) is False:
+            if self.login_status(resp) is False:
                 print('Log: Logging in.')
                 self.login()
             else:
                 return resp
         else:
             resp = self.session.post(url, data)
+            print(resp.url)
+            self.session.headers.update({'Referer': resp.url})
 
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError:
                 print('Log: Connection error.')
 
-            if self.check_login(resp) is False:
+            if self.login_status(resp) is False:
                 self.login()
             else:
                 return resp
 
-    def update_session_cookies(self):
+    def update_cookies(self):
         if os.path.isfile(self.jar):
             with open(self.jar, 'wb') as jar:
                 pickle.dump(self.session.cookies, jar)
 
-    def load_session_cookies(self):
+    def load_cookies(self):
         if os.path.isfile(self.jar):
             if os.path.getsize(self.jar) is not 0:
                 with open(self.jar, 'rb') as jar:
                     session_cookies = pickle.load(jar)
                     self.session.cookies.update(session_cookies)
 
-    def load_session_headers(self):
+    def load_headers(self):
         with open(self.conf['PROGRAM-SETTINGS']['HEADERS'], 'r') as headers:
             session_headers = json.load(headers)
             self.session.headers.update(session_headers)
 
-    def check_login(self, resp):
+    def login_status(self, resp):
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) not in resp.text:
             print('Log: Logging in.')
             self.login()
             return False
+
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) in resp.text:
             print('Log: Login check passed. [{}]'.format(resp.url))
-            self.update_session_cookies()
+            self.update_cookies()
             return True
+
         else:
             print('Log: Login check failed.')
             sys.exit(1)
 
     def login(self):
         '''Log-in to neopets.com'''
-        url = 'http://www.neopets.com/login'
-        resp = self.session_get(url)
-        self.session.headers.update({'Referer': url})
         url = 'http://www.neopets.com/login.phtml'
-        resp = self.session_post(url, data=self.login_data)
+        resp = self.post(url, data=self.login_data)
+        self.session.headers.update({'Referer': resp.url})
+
         if os.path.isfile(self.jar) is not True:
             os.system('touch neopets.cookies')
             self.session_cookies = resp.cookies
-        self.update_session_cookies(resp.cookies)
+
+        self.update_cookies(self.session.cookies)
         print('Login successful.')
 
 
