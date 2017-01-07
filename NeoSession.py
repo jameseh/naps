@@ -104,7 +104,7 @@ class NeoSession:
     def login_status(self, resp):
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) not in resp.text:
-            print('Log: Not logged in. Logging in..')
+            print('Log: Not Logged in. \n Log: Logging in.')
             return False
 
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
