@@ -34,7 +34,7 @@ class NeoSession:
     def get(self, url, pause=pause_tuple):
         time.sleep(random.randint(pause[0], pause[1]))
         resp = self.session.get(url)
-        self.session.headers.update({'Referer': resp.url})
+        self.session.headers.update({'Referer': url})
 
         try:
             resp.raise_for_status()
@@ -43,14 +43,17 @@ class NeoSession:
 
         if self.login_status(resp) is not True:
             self.login()
-        return resp
+            resp = self.session.post(url)
+            return resp
+        else:
+            return resp
 
     def post(self, url, data=None, pause=pause_tuple):
         time.sleep(random.randint(pause[0], pause[1]))
 
         if data is None:
             resp = self.session.post(url)
-            self.session.headers.update({'Referer': resp.url})
+            self.session.headers.update({'Referer': url})
 
             try:
                 resp.raise_for_status()
@@ -60,12 +63,14 @@ class NeoSession:
             if self.login_status(resp) is False:
                 print('Log: Logging in.')
                 self.login()
-            return resp
+                resp = self.session.post(url, data)
+                return resp
+            else:
+                return resp
 
         else:
             resp = self.session.post(url, data)
-            print(resp.url)
-            self.session.headers.update({'Referer': resp.url})
+            self.session.headers.update({'Referer': url})
 
             try:
                 resp.raise_for_status()
@@ -74,7 +79,10 @@ class NeoSession:
 
             if self.login_status(resp) is False:
                 self.login()
-            return resp
+                resp = self.session.post(url, data)
+                return resp
+            else:
+                return resp
 
     def update_cookies(self):
         if os.path.isfile(self.jar):
