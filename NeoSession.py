@@ -23,7 +23,8 @@ class NeoSession:
     conf.read('settings.conf')
     session = requests.Session()
     username = conf['USER-SETTINGS']['USERNAME']
-    login_data = {'username': username, 'password': conf['USER-SETTINGS']['PASSWORD'], 'destination': '%2Findex.phtml'}
+    login_data = {'username': username, 'password': conf['USER-SETTINGS']
+    ['PASSWORD'], 'destination': '%2Findex.phtml'}
     jar = conf['PROGRAM-SETTINGS']['COOKIE_JAR']
     pause_tuple = (2, 4)
 

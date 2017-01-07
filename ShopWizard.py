@@ -24,12 +24,14 @@ class ShopWizard(NeoSession):
         if 'Cui Codestone' not in resp.text:
             print('Log: ShopWizard - Search query failed.')
         else:
-            link = re.search(r'(<a href=")(/browseshop\.phtml\?owner=.*?&buy_obj_info_id=\d+?&buy_cost_neopoints=\d+?)("><b>)', resp.text)
+            link = re.search(r'(<a href=")(/browseshop\.phtml\?owner=.*?&buy_o'
+                             r'bj_info_id=\d+?&buy_cost_neopoints=\d+?)("><b>)',
+                             resp.text)
             url = 'http://www.neopets.com{}'.format(link.group(2))
             resp = self.get(url)
             find_url = re.search(
-                r'(<A href=")(buy_item\.phtml\?lower=0&owner=.*?)(" onClick=.*?<b>{}</b>)'.format(
-                    search_query), resp.text)
+                r'(<A href=")(buy_item\.phtml\?lower=0&owner=.*?)(" onClick='
+                r'.*?<b>{}</b>)'.format(search_query), resp.text)
             url = 'http://www.neopets.com/{}'.format(find_url.group(2))
             resp = self.get(url)
             print('Log: ShopWizard - Bought {}'.format(search_query))

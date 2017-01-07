@@ -30,13 +30,22 @@ class TradeStocks(NeoSession):
         cur = stock_data.cursor()
         try:
             cur.execute('''CREATE TABLE stocks
-                                               (ticker TEXT, volume INTEGER, open INTEGER, curr INTEGER, change TEXT, time FLOAT)''')
+                                               (ticker TEXT, volume INTEGER,
+                                                open INTEGER, curr INTEGER,
+                                                 change TEXT, time FLOAT)''')
             cur.execute('''CREATE TABLE portfolio
-                                               (ticker TEXT, volume INTEGER, price INTEGER, time FLOAT)''')
+                                               (ticker TEXT, volume INTEGER,
+                                                price INTEGER, time FLOAT)''')
         except sqlite3.OperationalError:
             for stocks in self.stock_list:
-                cur.execute('''INSERT INTO stocks (ticker, volume, open, curr, change, time) VALUES (?, ?, ?, ?, ?, ?)''', (stocks['ticker'], stocks['volume'], stocks['open'], stocks['curr'], stocks['change'], stocks['time']))
-                cur.execute('''INSERT INTO portfolio (ticker, volume, price, time) VALUES (?, ?, ?, ?)''', (stocks['ticker'], stocks['volume'], stocks['curr'], stocks['time']))
+                cur.execute('''INSERT INTO stocks (ticker, volume, open, curr,
+                               change, time) VALUES (?, ?, ?, ?, ?, ?)''',
+                            (stocks['ticker'], stocks['volume'], stocks['open'],
+                             stocks['curr'], stocks['change'], stocks['time']))
+                cur.execute('''INSERT INTO portfolio (ticker, volume, price,
+                               time) VALUES (?, ?, ?, ?)''',
+                            (stocks['ticker'], stocks['volume'], stocks['curr'],
+                             stocks['time']))
             stock_data.commit()
             cur.close()
 
@@ -46,14 +55,18 @@ class TradeStocks(NeoSession):
         resp = self.get(url)
         ref_ck = re.search(r"'&_ref_ck=(\w*)';", resp.text).group(1)
         url = 'http://www.neopets.com/process_stockmarket.phtml'
-        resp = self.post(url, data={'type': 'buy', 'ticker_symbol': self.lowest_stock['ticker'], 'amount_shares': self.buy_volume, '_ref_ck': ref_ck})
+        resp = self.post(url, data={'type': 'buy',
+                                    'ticker_symbol': self.lowest_stock['ticker'],
+                                    'amount_shares': self.buy_volume,
+                                    '_ref_ck': ref_ck})
 
         if 'Error: Sorry, that would' in resp.text:
             print('Log: StockTrade - Purchase exceeds daily 1000 share limit.')
             pass
         else:
             self.get('http://www.neopets.com/stockmarket.phtml?type=portfolio')
-            print('Log: StockTrade - Bought {} shares of {}.'.format(self.buy_volume, self.lowest_stock['ticker']))
+            print('Log: StockTrade - Bought {} shares of {}.'.format(
+                self.buy_volume, self.lowest_stock['ticker']))
 
     def sell(self):
         for stocks in self.stock_list:
