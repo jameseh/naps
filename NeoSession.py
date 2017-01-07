@@ -104,12 +104,12 @@ class NeoSession:
     def login_status(self, resp):
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) not in resp.text:
-            print('Log: Not Logged in. \n Log: Logging in.')
+            print('Log: Session - Not Logged in. \nLog: Session - Logging in.')
             return False
 
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) in resp.text:
-            print('Log: Login check passed. [{}]'.format(resp.url))
+            print('Log: Session - Login check passed. [{}]'.format(resp.url))
             return True
 
     def login(self):
@@ -124,7 +124,7 @@ class NeoSession:
 
         self.session.cookies.update(resp.cookies)
         self.update_cookies()
-        print('Login successful.')
+        print('Log: Session - Login successful.')
 
 
 def main():

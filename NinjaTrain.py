@@ -18,16 +18,17 @@ class NinjaTrain(NeoSession):
         resp = self.parse_status()
         self.course_type = self.determine_course(resp)
         self.run(resp)
-        #self.check_buy_codestone()
 
-    def check_inventory(self):
+    def check_buy_codestone(self):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
         resp = self.get(url)
-        codestone = re.search(r'(.+ codestone)', resp.text).group(1)
+        codestone = re.search(r'(to pay\)<p><b>)(.+? Codestone)(</b>)',
+                              resp.text).group(2)
+        print(codestone)
         url = 'http://www.neopets.com/inventory.phtml'
         resp = self.get(url)
-        #if codestone not in resp.text:
-            #ShowWizard.buy_item(codestone)
+        if codestone not in resp.text:
+            ShopWizard.buy_item(self, search_query=codestone)
 
     def parse_status(self):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
@@ -35,7 +36,8 @@ class NinjaTrain(NeoSession):
         return resp
 
     def determine_course(self, resp):
-        level = int(re.search(r'(Lvl : <font color=green><b>)(\d*)', resp.text).group(2))
+        level = int(re.search(r'(Lvl : <font color=green><b>)(\d*)',
+                              resp.text).group(2))
         strength = int(re.search(r'(Str : <b>)(\d*)', resp.text).group(2))
         defence = int(re.search(r'(Def : <b>)(\d*)', resp.text).group(2))
         hp = int(re.search(r'(Hp  : <b>)(\d*) / (\d*)</b>', resp.text).group(3))
@@ -56,28 +58,37 @@ class NinjaTrain(NeoSession):
 
     def run(self, resp):
         if 'Time till course finishes' in resp.text:
-            print('Log: Already in course.')
+            print('Log: TrainPet - Already in course.')
         elif 'This course has not been paid' in resp.text:
+            print('Log: TrainPet - Course has not been paid. \n'
+                  'Log: TrainPet - Paying for course. \n'
+                  'Log: TrainPet - {} is training {}'.format(
+                   self.pet, self.course_type))
+            self.check_buy_codestone()
             self.make_payment()
-            print('Log: Course has not been paid.')
         elif 'Course Finished!' in resp.text:
+            print('Log: TrainPet - Course finished! \n'
+                  'Log: TrainPet - {} is training {}.'.format(
+                self.pet, self.course_type))
             self.complete_course()
-            print('Log: Course finished!')
             self.train_pet()
+            self.check_buy_codestone()
             self.make_payment()
-            print('Log: {} is training {}.'.format(self.pet, self.course_type))
         else:
+            print('Log: TrainPet - {} is training {}.'.format(
+                   self.pet, self.course_type))
             self.train_pet()
+            self.check_buy_codestone()
             self.make_payment()
-            print('Log: {} is training {}.'.format(self.pet, self.course_type))
 
     def train_pet(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'
-        self.post(url, data={'type': 'start', 'course_type': self.course_type, 'pet_name': self.pet})
+        self.post(url, data={'type': 'start', 'course_type': self.course_type,
+                             'pet_name': self.pet})
 
     def make_payment(self):
-        url = 'http://www.neopets.com/island/process_fight_training.phtml?type=pay&' \
-              'pet_name={}'.format(self.pet)
+        url = 'http://www.neopets.com/island/process_fight_training.phtml?' \
+              'type=pay&pet_name={}'.format(self.pet)
         resp = self.get(url)
         if 'Time till course finishes :' in resp.text:
             return True

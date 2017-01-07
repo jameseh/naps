@@ -16,13 +16,13 @@ from NeoSession import NeoSession
 class TradeStocks(NeoSession):
     stock_list = []
     portfolio_list = []
+    buy_volume = '1000'
 
     def __init__(self):
-        self.buy_volume = '1000'
         self.parse()
+        self.lowest_stock = self.determine_lowest()
         self.save_data()
-        # self.lowest_stock = self.determine_lowest()
-        # self.buy_stock()
+        self.buy()
         self.sell()
 
     def save_data(self):
@@ -46,14 +46,14 @@ class TradeStocks(NeoSession):
         resp = self.get(url)
         ref_ck = re.search(r"'&_ref_ck=(\w*)';", resp.text).group(1)
         url = 'http://www.neopets.com/process_stockmarket.phtml'
-        resp = self.post(url, data={'type': 'buy', 'ticker_symbol': self.lowest_stock['ticker'], 'amount_shares': buy_volume, '_ref_ck': ref_ck})
+        resp = self.post(url, data={'type': 'buy', 'ticker_symbol': self.lowest_stock['ticker'], 'amount_shares': self.buy_volume, '_ref_ck': ref_ck})
 
         if 'Error: Sorry, that would' in resp.text:
-            print('Over daily 1000 shares.')
+            print('Log: StockTrade - Purchase exceeds daily 1000 share limit.')
             pass
         else:
             self.get('http://www.neopets.com/stockmarket.phtml?type=portfolio')
-            print('{} shares of {} bought.'.format(self.buy_volume, self.lowest_stock['ticker']))
+            print('Log: StockTrade - Bought {} shares of {}.'.format(self.buy_volume, self.lowest_stock['ticker']))
 
     def sell(self):
         for stocks in self.stock_list:
