@@ -65,7 +65,7 @@ class NinjaTrain(NeoSession):
             print('Log: TrainPet - Course paid, {} is training {}.'.format(
                 self.pet, self.course_type))
         elif 'Course Finished!' in resp.text:
-            print('Log: TrainPet - Course finished!')
+            print('Log: TrainPet - Course finished! Putting in another course.')
             self.complete_course()
             self.train_pet()
             self.check_buy_codestone()
@@ -93,7 +93,7 @@ class NinjaTrain(NeoSession):
 
     def complete_course(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'
-        self.post(url, data={'type': 'complete', 'pet_name': self.pet})
+        self.post(url, data={'type': 'complete', 'pet_name': self.pet}, login_check=False)
 
 
 def main():
