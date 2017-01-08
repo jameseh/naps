@@ -23,8 +23,7 @@ class NinjaTrain(NeoSession):
         url = 'http://www.neopets.com/island/fight_training.phtml?type=status'
         resp = self.get(url)
         codestone = re.search(r'(to pay\)<p><b>)(.+? Codestone)(</b>)',
-                              resp.text).group(2)
-        print(codestone)
+                              resp.text).group(2).lstrip()
         url = 'http://www.neopets.com/inventory.phtml'
         resp = self.get(url)
         if codestone not in resp.text:
@@ -60,26 +59,25 @@ class NinjaTrain(NeoSession):
         if 'Time till course finishes' in resp.text:
             print('Log: TrainPet - Already in course.')
         elif 'This course has not been paid' in resp.text:
-            print('Log: TrainPet - Course has not been paid. \n'
-                  'Log: TrainPet - Paying for course. \n'
-                  'Log: TrainPet - {} is training {}'.format(
-                   self.pet, self.course_type))
+            print('Log: TrainPet - Course has not been paid.')
             self.check_buy_codestone()
             self.make_payment()
-        elif 'Course Finished!' in resp.text:
-            print('Log: TrainPet - Course finished! \n'
-                  'Log: TrainPet - {} is training {}.'.format(
+            print('Log: TrainPet - Course paid, {} is training {}.'.format(
                 self.pet, self.course_type))
+        elif 'Course Finished!' in resp.text:
+            print('Log: TrainPet - Course finished!')
             self.complete_course()
             self.train_pet()
             self.check_buy_codestone()
             self.make_payment()
+            print('Log: TrainPet - Course paid, {} is training {}.'.format(
+                self.pet, self.course_type))
         else:
-            print('Log: TrainPet - {} is training {}.'.format(
-                   self.pet, self.course_type))
             self.train_pet()
             self.check_buy_codestone()
             self.make_payment()
+            print('Log: TrainPet - Course paid, {} is training {}.'.format(
+                self.pet, self.course_type))
 
     def train_pet(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'
@@ -99,7 +97,6 @@ class NinjaTrain(NeoSession):
 
 
 def main():
-    NeoSession()
     NinjaTrain()
 
 

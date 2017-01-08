@@ -11,17 +11,17 @@ from NeoSession import NeoSession
 
 class ShopWizard(NeoSession):
 
-    def buy_item(self, search_query):
+    def buy_item(self, search_query=None):
         url = 'http://www.neopets.com/market.phtml?type=wizard'
         resp = self.get(url)
         url = 'http://www.neopets.com/market.phtml'
         data = {'type': 'process_wizard', 'feedset': '0',
                                        'shopwizard': search_query,
                                        'table': 'shop', 'criteria': 'exact',
-                                       'min_price': 0, 'max_price': 99999}
+                                       'min_price': '0', 'max_price': '99999'}
         self.session.headers.update({'Origin': 'http://www.neopets.com'})
         resp = self.post(url, data)
-        if 'Cui Codestone' not in resp.text:
+        if search_query not in resp.text:
             print('Log: ShopWizard - Search query failed.')
         else:
             link = re.search(r'(<a href=")(/browseshop\.phtml\?owner=.*?&buy_o'
@@ -38,7 +38,6 @@ class ShopWizard(NeoSession):
 
 
 def main():
-    NeoSession()
     ShopWizard()
 
 

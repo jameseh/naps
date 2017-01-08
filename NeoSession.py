@@ -36,7 +36,7 @@ class NeoSession:
         time.sleep(random.randint(pause[0], pause[1]))
         resp = self.session.get(url)
         self.session.headers.update({'Referer': url})
-
+        self.update_cookies()
         try:
             resp.raise_for_status()
         except requests.exceptions.HTTPError:
@@ -45,6 +45,8 @@ class NeoSession:
         if self.login_status(resp) is not True:
             self.login()
             resp = self.session.post(url)
+            self.session.headers.update({'Referer': url})
+            self.update_cookies()
             return resp
         else:
             return resp
@@ -55,6 +57,7 @@ class NeoSession:
         if data is None:
             resp = self.session.post(url)
             self.session.headers.update({'Referer': url})
+            self.update_cookies()
 
             try:
                 resp.raise_for_status()
@@ -65,6 +68,8 @@ class NeoSession:
                 print('Log: Logging in.')
                 self.login()
                 resp = self.session.post(url, data)
+                self.session.headers.update({'Referer': url})
+                self.update_cookies()
                 return resp
             else:
                 return resp
@@ -72,7 +77,7 @@ class NeoSession:
         else:
             resp = self.session.post(url, data)
             self.session.headers.update({'Referer': url})
-
+            self.update_cookies()
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError:
@@ -81,6 +86,8 @@ class NeoSession:
             if self.login_status(resp) is False:
                 self.login()
                 resp = self.session.post(url, data)
+                self.session.headers.update({'Referer': url})
+                self.update_cookies()
                 return resp
             else:
                 return resp
@@ -118,11 +125,8 @@ class NeoSession:
         url = 'http://www.neopets.com/login.phtml'
         resp = self.post(url, data=self.login_data)
         self.session.headers.update({'Referer': resp.url})
-
         if os.path.isfile(self.jar) is not True:
             os.system('touch neopets.cookies')
-            self.session_cookies = resp.cookies
-
         self.session.cookies.update(resp.cookies)
         self.update_cookies()
         print('Log: Session - Login successful.')
