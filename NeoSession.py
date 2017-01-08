@@ -32,7 +32,7 @@ class NeoSession:
         self.load_cookies()
         self.load_headers()
 
-    def get(self, url, pause=pause_tuple):
+    def get(self, url, pause=pause_tuple, login_check=True):
         time.sleep(random.randint(pause[0], pause[1]))
         resp = self.session.get(url)
         self.session.headers.update({'Referer': url})
@@ -42,16 +42,19 @@ class NeoSession:
         except requests.exceptions.HTTPError:
             print('Log: Connection error.')
 
-        if self.login_status(resp) is not True:
-            self.login()
-            resp = self.session.post(url)
-            self.session.headers.update({'Referer': url})
-            self.update_cookies()
-            return resp
+        if login_check is True:
+            if self.login_status(resp) is not True:
+                self.login()
+                resp = self.session.post(url)
+                self.session.headers.update({'Referer': url})
+                self.update_cookies()
+                return resp
+            else:
+                return resp
         else:
             return resp
 
-    def post(self, url, data=None, pause=pause_tuple):
+    def post(self, url, data=None, pause=pause_tuple, login_check=True):
         time.sleep(random.randint(pause[0], pause[1]))
 
         if data is None:
@@ -64,16 +67,18 @@ class NeoSession:
             except requests.exceptions.HTTPError:
                 print('Log: Connection error.')
 
-            if self.login_status(resp) is False:
-                print('Log: Logging in.')
-                self.login()
-                resp = self.session.post(url, data)
-                self.session.headers.update({'Referer': url})
-                self.update_cookies()
-                return resp
+            if login_check is True:
+                if self.login_status(resp) is False:
+                    print('Log: Logging in.')
+                    self.login()
+                    resp = self.session.post(url, data)
+                    self.session.headers.update({'Referer': url})
+                    self.update_cookies()
+                    return resp
+                else:
+                    return resp
             else:
                 return resp
-
         else:
             resp = self.session.post(url, data)
             self.session.headers.update({'Referer': url})
@@ -83,12 +88,15 @@ class NeoSession:
             except requests.exceptions.HTTPError:
                 print('Log: Connection error.')
 
-            if self.login_status(resp) is False:
-                self.login()
-                resp = self.session.post(url, data)
-                self.session.headers.update({'Referer': url})
-                self.update_cookies()
-                return resp
+            if login_check is True:
+                if self.login_status(resp) is False:
+                    self.login()
+                    resp = self.session.post(url, data)
+                    self.session.headers.update({'Referer': url})
+                    self.update_cookies()
+                    return resp
+                else:
+                    return resp
             else:
                 return resp
 
