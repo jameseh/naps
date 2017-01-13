@@ -14,6 +14,7 @@ import os
 import sys
 import random
 import time
+import datetime
 import configparser as cp
 
 
@@ -32,6 +33,10 @@ class NeoSession:
         self.load_cookies()
         self.load_headers()
 
+    @staticmethod
+    def time():
+        return str(datetime.datetime.now())
+
     def get(self, url, pause=pause_tuple, login_check=True):
         time.sleep(random.randint(pause[0], pause[1]))
         resp = self.session.get(url)
@@ -40,7 +45,7 @@ class NeoSession:
         try:
             resp.raise_for_status()
         except requests.exceptions.HTTPError:
-            print('Log: Connection error.')
+            print('{}: ERROR - Connection error.'.format(self.time()))
 
         if login_check is True:
             if self.login_status(resp) is not True:
@@ -65,11 +70,10 @@ class NeoSession:
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError:
-                print('Log: Connection error.')
+                print('{}: ERROR - Connection error.'.format(self.time()))
 
             if login_check is True:
                 if self.login_status(resp) is False:
-                    print('Log: Logging in.')
                     self.login()
                     resp = self.session.post(url, data)
                     self.session.headers.update({'Referer': url})
@@ -86,7 +90,7 @@ class NeoSession:
             try:
                 resp.raise_for_status()
             except requests.exceptions.HTTPError:
-                print('Log: Connection error.')
+                print('{}: ERROR - Connection error.'.format(self.time()))
 
             if login_check is True:
                 if self.login_status(resp) is False:
@@ -120,12 +124,12 @@ class NeoSession:
     def login_status(self, resp):
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) not in resp.text:
-            print('Log: Session - Not Logged in. \nLog: Session - Logging in.')
+            print('{}: Session - Not Logged in. [{}] \n{}: Session - Logging in.'.format(self.time(), resp.url, self.time()))
             return False
 
         if 'Welcome, <a href="/userlookup.phtml?user={}">'.format(
                 self.username) in resp.text:
-            print('Log: Session - Login check passed. [{}]'.format(resp.url))
+            print('{}: Session - Login check passed. [{}]'.format(self.time(), resp.url))
             return True
 
     def login(self):
@@ -137,7 +141,7 @@ class NeoSession:
             os.system('touch neopets.cookies')
         self.session.cookies.update(resp.cookies)
         self.update_cookies()
-        print('Log: Session - Login successful.')
+        print('{}: Session - Login successful.'.format(self.time()))
 
 
 def main():

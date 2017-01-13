@@ -42,12 +42,10 @@ class TradeStocks(NeoSession):
                                change, time) VALUES (?, ?, ?, ?, ?, ?)''',
                             (stocks['ticker'], stocks['volume'], stocks['open'],
                              stocks['curr'], stocks['change'], stocks['time']))
-                cur.execute('''INSERT INTO portfolio (ticker, volume, price,
-                               time) VALUES (?, ?, ?, ?)''',
-                            (stocks['ticker'], stocks['volume'], stocks['curr'],
-                             stocks['time']))
             stock_data.commit()
             cur.close()
+            print('{}: StockTrade - Stock data written to DB.'.format(
+                self.time))
 
     def buy(self):
         url = 'http://www.neopets.com/stockmarket.phtml?type=buy&ticker={}' \
@@ -58,22 +56,33 @@ class TradeStocks(NeoSession):
         resp = self.post(url, data={'type': 'buy',
                                     'ticker_symbol': self.lowest_stock['ticker'],
                                     'amount_shares': self.buy_volume,
-                                    '_ref_ck': ref_ck})
+                                    '_ref_ck': ref_ck}, login_check=False)
 
         if 'Error: Sorry, that would' in resp.text:
-            print('Log: StockTrade - Purchase exceeds daily 1000 share limit.')
+            print('{}: StockTrade - Purchase exceeds daily 1000 share limit.'.
+                  format(self.time))
             pass
         else:
             self.get('http://www.neopets.com/stockmarket.phtml?type=portfolio')
-            print('Log: StockTrade - Bought {} shares of {}.'.format(
-                self.buy_volume, self.lowest_stock['ticker']))
+            print('{}: StockTrade - Bought {} shares of {}.'.format(
+                self.time, self.buy_volume,
+                self.lowest_stock['ticker']))
+
+            stock_data = sqlite3.connect('stockdata.db')
+            cur = stock_data.cursor()
+            cur.execute('''INSERT INTO portfolio (ticker, volume, price,
+                                      time) VALUES (?, ?, ?, ?)''',
+                        (self.lowest_stock['ticker'], self.buy_volume, self.lowest_stock['curr'],
+                         self.lowest_stock['time']))
+            stock_data.commit()
+            cur.close()
 
     def sell(self):
-        for stocks in self.stock_list:
-            if '+' in stocks['change']:
-                change = re.search(r'\+(\d+\.\d+)%', stocks['change']).group(1)
-                if float(change) > 50.0:
-                    print(stocks)
+        stock_data = sqlite3.connect('stockdata.db')
+        cur = stock_data.cursor()
+        for row in cur.execute('SELECT * FROM portfolio'):
+            print(row)
+        print('{}: StockTrade - Stocks sold.'.format(self.time))
 
     def parse(self):
         url = 'http://www.neopets.com/stockmarket.phtml?type=list&full=true'
@@ -96,18 +105,22 @@ class TradeStocks(NeoSession):
         for stocks in self.stock_list:
             if '-' in stocks['change']:
                 if int(stocks['volume']) >= 1000:
-                    if int(stocks['curr']) >= 15:
+                    if int(stocks['change']) >= 30:
                         negative_stocks.append(stocks)
             if len(negative_stocks) == 0:
                  pass
             else:
                 self.lowest_stock = negative_stocks[0]
+                print('{}: Stock Trade - Lowest stock found "{}"'.format(
+                    self.time, self.lowest_stock))
                 return self.lowest_stock
 
             if len(negative_stocks) > 1:
                 lowest_stock = negative_stocks[0][1]
                 if float(negative_stocks[1]) > float(lowest_stock[1]):
                     self.lowest_stock = stocks
+                    print('{}: Stock Trade - Lowest stock found "{}"'.format(
+                        self.time, self.lowest_stock))
                 return self.lowest_stock
 
 

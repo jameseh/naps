@@ -7,6 +7,7 @@ Part of naps (neopets automation program suite)
 
 
 import re
+import datetime
 from NeoSession import NeoSession
 from ShopWizard import ShopWizard
 
@@ -57,27 +58,27 @@ class NinjaTrain(NeoSession):
 
     def run(self, resp):
         if 'Time till course finishes' in resp.text:
-            print('Log: TrainPet - Already in course.')
+            print('{}: TrainPet - Already in course.'.format(self.time()))
         elif 'This course has not been paid' in resp.text:
-            print('Log: TrainPet - Course has not been paid.')
+            print('{}: TrainPet - Course has not been paid.'.format(self.time()))
             self.check_buy_codestone()
             self.make_payment()
-            print('Log: TrainPet - Course paid, {} is training {}.'.format(
-                self.pet, self.course_type))
+            print('{}: TrainPet - Course paid, {} is training {}.'.format(
+                self.time(), self.pet, self.course_type))
         elif 'Course Finished!' in resp.text:
-            print('Log: TrainPet - Course finished! Putting in another course.')
+            print('{}: TrainPet - Course finished! Putting in another course.'.format(self.time()))
             self.complete_course()
             self.train_pet()
             self.check_buy_codestone()
             self.make_payment()
-            print('Log: TrainPet - Course paid, {} is training {}.'.format(
-                self.pet, self.course_type))
+            print('{}: TrainPet - Course paid, {} is training {}.'.format(
+                self.time(), self.pet, self.course_type))
         else:
             self.train_pet()
             self.check_buy_codestone()
             self.make_payment()
-            print('Log: TrainPet - Course paid, {} is training {}.'.format(
-                self.pet, self.course_type))
+            print('{}: TrainPet - Course paid, {} is training {}.'.format(
+                self.time(), self.pet, self.course_type))
 
     def train_pet(self):
         url = 'http://www.neopets.com/island/process_fight_training.phtml'

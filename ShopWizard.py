@@ -6,6 +6,7 @@ Part of naps (neopets automation program suite)
 '''
 
 import re
+import datetime
 from NeoSession import NeoSession
 
 
